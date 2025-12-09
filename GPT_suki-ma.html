@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スキーマ診断アプリ（YSQ-R簡易版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --card-bg: #ffffff;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --border-soft: #e5e7eb;
+      --error: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top left, #e0f2fe 0, #f5f5f7 45%);
+      color: var(--text-main);
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1rem 2.5rem;
+    }
+
+    header {
+      margin-bottom: 1rem;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      margin: 0.5rem 0;
+    }
+
+    header p {
+      margin: 0.25rem 0;
+      color: var(--text-sub);
+      font-size: 0.9rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .25rem .6rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: .75rem;
+      font-weight: 500;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .scale-legend {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .scale-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .scale-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      font-size: 0.7rem;
+      font-weight: 600;
+      background-color: #ffffff;
+    }
+
+    .question-card {
+      border-radius: 0.75rem;
+      border: 1px solid var(--border-soft);
+      padding: 0.75rem 0.75rem 0.6rem;
+      margin-bottom: 0.5rem;
+      background-color: #ffffff;
+      transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    }
+
+    .question-card:hover {
+      border-color: rgba(37, 99, 235, 0.45);
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
+      background-color: #f9fafb;
+    }
+
+    .question-card.missing {
+      border-color: var(--error);
+      box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.3);
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: .5rem;
+      margin-bottom: .35rem;
+    }
+
+    .question-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .question-meta {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      white-space: nowrap;
+    }
+
+    .options-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-top: 0.15rem;
+    }
+
+    .option-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.3rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      font-size: 0.78rem;
+      cursor: pointer;
+      background-color: #ffffff;
+      transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+    }
+
+    .option-label:hover {
+      border-color: rgba(37, 99, 235, 0.5);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.18);
+    }
+
+    .option-label input[type="radio"] {
+      accent-color: var(--accent);
+    }
+
+    .option-text {
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 1.3rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: background-color 0.15s, box-shadow 0.15s, transform 0.05s;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: #ffffff;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    }
+
+    .btn-secondary {
+      background-color: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background-color: #d1d5db;
+    }
+
+    .error-text {
+      font-size: 0.8rem;
+      color: var(--error);
+      margin-top: 0.25rem;
+    }
+
+    .result-section {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .result-section.visible {
+      display: block;
+    }
+
+    .result-note {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: .25rem;
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .result-table th,
+    .result-table td {
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    .result-table th {
+      background-color: #f3f4f6;
+      font-size: 0.8rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-strong {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #b91c1c;
+    }
+
+    .badge-medium {
+      background-color: rgba(234, 179, 8, 0.15);
+      color: #92400e;
+    }
+
+    .badge-weak {
+      background-color: rgba(16, 185, 129, 0.12);
+      color: #047857;
+    }
+
+    .schema-desc {
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0.75rem 0.75rem 2rem;
+      }
+      header h1 {
+        font-size: 1.25rem;
+      }
+      .result-table th:nth-child(3),
+      .result-table td:nth-child(3) {
+        display: none; /* スマホでは説明列を少し省略 */
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <span class="chip">スキーマ診断（YSQ-R 116問）</span>
+      <h1>スキーマ診断アプリ</h1>
+      <p>各文章を読み、「自分の感情ベースで」どれくらい当てはまるか、1〜6 点で選んでください。</p>
+      <p style="font-size:0.85rem;color:var(--text-sub);">
+        1 = まったく当てはまらない ／ 6 = 完璧に当てはまる<br>
+        ※診断結果はあくまで自己理解の参考用であり、医療的な診断ではありません。
+      </p>
+    </header>
+
+    <section class="card">
+      <div class="scale-legend">
+        <span><span class="scale-number">1</span>まったく当てはまらない</span>
+        <span><span class="scale-number">2</span>ほとんど当てはまらない</span>
+        <span><span class="scale-number">3</span>どちらかと言えば当てはまる</span>
+        <span><span class="scale-number">4</span>まぁまぁ当てはまる</span>
+        <span><span class="scale-number">5</span>ほとんど当てはまる</span>
+        <span><span class="scale-number">6</span>完璧に当てはまる</span>
+      </div>
+
+      <form id="schemaForm">
+        <div id="questionsContainer"></div>
+
+        <div class="actions">
+          <button type="button" class="btn-primary" id="submitBtn">診断する</button>
+          <button type="button" class="btn-secondary" id="resetBtn">すべてリセット</button>
+          <span id="errorMessage" class="error-text" style="display:none;"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="resultSection" class="result-section">
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin-top:0;">診断結果</h2>
+        <p class="result-note">
+          各スキーマの平均点（0〜6点）を表示します。平均が<strong>4以上</strong>のスキーマは、やや強めに出ている可能性があります。
+        </p>
+        <table class="result-table" id="resultTable">
+          <thead>
+            <tr>
+              <th>スキーマ</th>
+              <th>平均点</th>
+              <th>概要</th>
+              <th>傾向</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // 116問の定義（schema = ED, AB など）
+    const questions = [
+      // ED 愛情剥奪
+      { id: 1,  text: "十分な愛と関心を得られていない。", schema: "ED" },
+      { id: 2,  text: "ほとんどの人生で、アドバイスや精神的なサポートをしてくれるような、頼れる人がいなかった。", schema: "ED" },
+      { id: 3,  text: "人生の大半において、私と親しくしたり、多くの時間を共に過ごしたいと思う人がいなかった。", schema: "ED" },
+      { id: 4,  text: "人生の大半で、自分が誰かにとって特別な存在だと感じたことがない。", schema: "ED" },
+      { id: 5,  text: "どうしたらいいかわからないときに、的確なアドバイスや方向性を示してくれるような人はほとんどいなかった。", schema: "ED" },
+
+      // AB 見捨てられ
+      { id: 6,  text: "親しいと感じる人が、私のもとを去ったり、私を見捨てたりするのではないかと心配している。", schema: "AB" },
+      { id: 7,  text: "大事な人間関係が、長続きするとは思えない。", schema: "AB" },
+      { id: 8,  text: "自分に寄り添ってくれないパートナーに依存していると感じる。", schema: "AB" },
+      { id: 9,  text: "たとえ短時間でも、誰かが私を一人にすると動揺する。", schema: "AB" },
+      { id: 10, text: "いつもそばにいてくれると確信できないので、他人とはあまり親しくなれない。", schema: "AB" },
+      { id: 11, text: "親しい人たちは、ある瞬間は私に優しく接してくれるが、次の瞬間には怒ったり、自己中心的になったり、ケンカをしたりと、とても予測がつかない。", schema: "AB" },
+      { id: 12, text: "私は他人をとても必要としているので、周囲の人を失うことを心配している。", schema: "AB" },
+      { id: 13, text: "自分らしくいられないし、自分の本当の気持ちを表現できない。", schema: "AB" },
+
+      // MA 不信・虐待
+      { id: 14, text: "他人の前で油断すると、相手はわざと私を傷つけてくるだろう。", schema: "MA" },
+      { id: 15, text: "誰かが私を裏切るのは時間の問題だ。", schema: "MA" },
+      { id: 16, text: "人を信用するのがとても苦手だ。", schema: "MA" },
+      { id: 17, text: "私は他人に \"テスト\" を課し、相手が私に真実を話しているか、善意であるかを確認する。", schema: "MA" },
+      { id: 18, text: "「人間関係は支配するか支配されるかだ」という信念を持っている。", schema: "MA" },
+
+      // SI 孤立
+      { id: 19, text: "私は他の人とは根本的に違う。", schema: "SI" },
+      { id: 20, text: "私は一匹狼だ。", schema: "SI" },
+      { id: 21, text: "いつも集団の外側にいる気がする。", schema: "SI" },
+      { id: 22, text: "誰も私のことを理解してくれない。", schema: "SI" },
+      { id: 23, text: "自分が宇宙人であるかのように感じることがある。", schema: "SI" },
+
+      // DS 欠陥・恥
+      { id: 24, text: "私が好意を抱いている人たちは、本当の私を知ったら、私のそばにいたいと思わないだろう。", schema: "DS" },
+      { id: 25, text: "私は本質的に欠陥がある。", schema: "DS" },
+      { id: 26, text: "私は愛されていないと感じる。", schema: "DS" },
+      { id: 27, text: "自分の深いところを他人にさらけ出すことができない。", schema: "DS" },
+      { id: 28, text: "他人に好かれると、自分が人を騙しているように感じる。", schema: "DS" },
+      { id: 29, text: "私を愛する人の気持ちが理解できない。", schema: "DS" },
+
+      // FA 失敗
+      { id: 30, text: "私が仕事（学校）でやっていることは、他の人がやっていることに比べたら、ほとんど何もしていないに等しい。", schema: "FA" },
+      { id: 31, text: "私がやっている仕事（勉強）の世界では、ほとんどの人は私より能力がある。", schema: "FA" },
+      { id: 32, text: "私は失敗ばかりだ。", schema: "FA" },
+      { id: 33, text: "私は仕事（学校）において、ほとんどの人ほど才能がない。", schema: "FA" },
+      { id: 34, text: "自分の業績が他の人たちに及ばないので、他の人たちの前では恥ずかしく感じることが多い。", schema: "FA" },
+      { id: 35, text: "私はよく他の人と自分の業績を比べ、他人の方がずっと成功していると感じる。", schema: "FA" },
+
+      // DI 無能・依存
+      { id: 36, text: "日常生活で、自分ひとりでやっていけるとは思えない。", schema: "DI" },
+      { id: 37, text: "自分で自分の世話をするよりも、他人の方が自分の世話をしてくれることのほうが多い。", schema: "DI" },
+      { id: 38, text: "指導してくれる人がいないと、仕事（勉強）以外の新しいことに取り組めない。", schema: "DI" },
+      { id: 39, text: "仕事（学校）以外でも、挑戦したことにはすべて失敗してしまう。", schema: "DI" },
+      { id: 40, text: "日常の場面で自分の判断を信じると、間違った結果になってしまう。", schema: "DI" },
+      { id: 41, text: "現実的な問題についてアドバイスしてくれる人が必要だと感じる。", schema: "DI" },
+      { id: 42, text: "日常的な責任を果たすことに関して、自分を大人というより子供のようだと感じる。", schema: "DI" },
+      { id: 43, text: "日常生活の責任に圧倒される。", schema: "DI" },
+
+      // VH すべてが怖い
+      { id: 44, text: "災害（自然、犯罪、金融、医療）がいつ起きてもおかしくないと感じている。", schema: "VH" },
+      { id: 45, text: "誰かから攻撃されることを心配している。", schema: "VH" },
+      { id: 46, text: "病気や怪我をしないように細心の注意を払っている。", schema: "VH" },
+      { id: 47, text: "医師から深刻な病気ではないと診断されても、自分が深刻な病気になるのではないかと心配する。", schema: "VH" },
+      { id: 48, text: "犯罪や公害など、世の中で起きている悪いことをよく心配する。", schema: "VH" },
+      { id: 49, text: "世界は危険な場所だと感じる。", schema: "VH" },
+
+      // EM 巻き込まれ
+      { id: 50, text: "両親と私は、お互いの生活や問題に過干渉になりがちだ。", schema: "EM" },
+      { id: 51, text: "裏切りや罪悪感を感じたりすることなく、自分の親と重要な情報をお互いに隠しておくのはとても難しい。", schema: "EM" },
+      { id: 52, text: "自分の親とはほぼ毎日のように話し合っている。そうしておかないと、どちらかが罪悪感を感じたり、傷ついたり、失望したり、孤独を感じたりする。", schema: "EM" },
+      { id: 53, text: "親やパートナーのアイデンティティを、自分のアイデンティティと同じように感じることが多い。", schema: "EM" },
+      { id: 54, text: "親密な人と適切な距離を保つのがとても難しい。", schema: "EM" },
+      { id: 55, text: "親やパートナーに対して、プライバシーがないと感じることが多い。", schema: "EM" },
+      { id: 56, text: "親と離れて一人暮らしをすることに、親がとても傷ついている、あるいは傷つくだろうと感じている。", schema: "EM" },
+
+      // SB 服従
+      { id: 57, text: "自分の好きなようにすると、トラブルを招くだけだと思う。", schema: "SB" },
+      { id: 58, text: "人間関係では、相手に優位に立たせてしまう。", schema: "SB" },
+      { id: 59, text: "私はいつも他人に選択を委ねてきたので、自分自身が何を望んでいるのかよくわからない。", schema: "SB" },
+      { id: 60, text: "他人に拒絶されないように、他人を喜ばせることばかり気にしている。", schema: "SB" },
+      { id: 61, text: "他人との対立を避けるためなら、人一倍努力を惜しまない。", schema: "SB" },
+
+      // SS 自己犠牲
+      { id: 62, text: "私は見返りを得るよりも、他人に与えることの方が多い。", schema: "SS" },
+      { id: 63, text: "私は親しい人の面倒を見るのが普通だ。", schema: "SS" },
+      { id: 64, text: "どんなに忙しくても、他人のために時間を割くことができる。", schema: "SS" },
+      { id: 65, text: "私はいつも皆の悩みを聞く人だ。", schema: "SS" },
+      { id: 66, text: "私は他人のために尽くしすぎて、自分のために十分な時間を使えていないと、周囲から思われている。", schema: "SS" },
+      { id: 67, text: "いくら与えても足りないと感じる。", schema: "SS" },
+
+      // FLC 自己規制の失敗
+      { id: 68, text: "自分の行動をコントロールできなくなるのが心配だ。", schema: "FLC" },
+      { id: 69, text: "自分の怒りがコントロールできなくなると、誰かを身体的、精神的にひどく傷つけてしまうのではないかと心配だ。", schema: "FLC" },
+      { id: 70, text: "自分の感情や衝動を抑えなければ、何か悪いことが起こりそうだ。", schema: "FLC" },
+      { id: 71, text: "自分の中に怒りや憤りが溜まっているが、それを表現できない。", schema: "FLC" },
+
+      // EC 感情抑制
+      { id: 72, text: "私は自意識過剰で、他人に肯定的な感情（例えば、愛情を示す、気にかけていることを示す）を示すことができない。", schema: "EC" },
+      { id: 73, text: "自分の感情を他人に表現するのが恥ずかしい。", schema: "EC" },
+      { id: 74, text: "温かく自然体でいることが難しい。", schema: "EC" },
+      { id: 75, text: "自分をコントロールしすぎて、感情的でないと思われる。", schema: "EC" },
+      { id: 76, text: "感情的に堅苦しく見られる。", schema: "EC" },
+
+      // US 完璧主義
+      { id: 77, text: "私は自分のすることのほとんどで一番でなければならない。", schema: "US" },
+      { id: 78, text: "私はほとんどすべてのものを完璧な状態に保とうと努力している。", schema: "US" },
+      { id: 79, text: "成し遂げなければならないことが多すぎて、本当にリラックスする時間はほとんどない。", schema: "US" },
+      { id: 80, text: "私はすべての責任を果たさなければならない。", schema: "US" },
+      { id: 81, text: "自分の基準を満たすために、喜びや幸福を犠牲にすることが多い。", schema: "US" },
+      { id: 82, text: "自分の失敗を簡単に許したり、言い訳をしたりすることができない。", schema: "US" },
+      { id: 83, text: "私は常にナンバーワンでなければならない。", schema: "US" },
+
+      // ET 俺様
+      { id: 84, text: "他人から何かを要求されたとき、「ノー」と答えるのが苦手だ。", schema: "ET" },
+      { id: 85, text: "私は束縛されたり、自分のしたいことをさせられたりするのが嫌いだ。", schema: "ET" },
+      { id: 86, text: "他の人がしている普通のルールや慣習に従う必要はないと思っている。", schema: "ET" },
+      { id: 87, text: "自分のことを優先するあまり、友人や家族に時間を割けないことがよくある。", schema: "ET" },
+      { id: 88, text: "物事の進め方について、ひとりよがりだとよく言われる。", schema: "ET" },
+      { id: 89, text: "他人に指図されるのが許せない。", schema: "ET" },
+
+      // IS コントロール不可能
+      { id: 90, text: "ルーチンワークや退屈な仕事をこなすために、自分を律することができない。", schema: "IS" },
+      { id: 91, text: "私はしばしば、衝動に駆られ、トラブルに巻き込まれたり、他人を傷つけたりしてしまう。", schema: "IS" },
+      { id: 92, text: "すぐに飽きてしまう。", schema: "IS" },
+      { id: 93, text: "仕事が難しくなると、我慢してやり遂げることができない。", schema: "IS" },
+      { id: 94, text: "自分のためになるとわかっていても、楽しくないことを無理にすることができない。", schema: "IS" },
+      { id: 95, text: "自分の決意を貫き通したことがほとんどない。", schema: "IS" },
+      { id: 96, text: "衝動的に物事を行い、後で後悔することがよくある。", schema: "IS" },
+
+      // AS ほめられたい
+      { id: 97, text: "ほとんど全ての知人に好かれたい。", schema: "AS" },
+      { id: 98, text: "一緒にいる人によって自分を変える。", schema: "AS" },
+      { id: 99, text: "私の自尊心は、ほとんどが他人が私をどう見ているかをベースにしている。", schema: "AS" },
+      { id: 100, text: "私が嫌だと思う人からも、好かれたいと思う。", schema: "AS" },
+      { id: 101, text: "他人から注目されない限り、自分の重要性は低いと感じる。", schema: "AS" },
+
+      // NP ネガティブ注意
+      { id: 102, text: "ほとんどいつも何かがうまくいかないので、用心するに越したことはない。", schema: "NP" },
+      { id: 103, text: "間違った決断が大惨事につながるのではないかと心配だ。", schema: "NP" },
+      { id: 104, text: "ミスの結果がとても深刻に思えるので、些細な決断によくこだわる。", schema: "NP" },
+      { id: 105, text: "物事がうまくいかないと想定していた方が、うまくいかなくてもがっかりしなくてすむ。", schema: "NP" },
+      { id: 106, text: "私は悲観的になりがちだ。", schema: "NP" },
+      { id: 107, text: "何かに熱中しすぎる人々を見ると不愉快になり、うまくいかないかもしれないと警告したくなる。", schema: "NP" },
+
+      // PUS 罰するべき（自分）
+      { id: 108, text: "自分がミスをしたら、罰せられて当然だと思う。", schema: "PUS" },
+      { id: 109, text: "間違っても言い訳はできない。", schema: "PUS" },
+      { id: 110, text: "しっかり行動をしなかったら、悪い結果が起きるのが当然だ。", schema: "PUS" },
+      { id: 111, text: "ミスをする理由は問題ではない。間違ったことをしたら、その代償を払うべきだ。", schema: "PUS" },
+      { id: 112, text: "私は罰せられるべき悪い人間だ。", schema: "PUS" },
+
+      // PUO 罰するべき（他人）
+      { id: 113, text: "「自重」しない人は何らかの罰を受けるべきだ。", schema: "PUO" },
+      { id: 114, text: "ほとんどの場合、私は他人の言い訳を受け入れない。他人は責任を認め、代償を支払う気がないだけだ。", schema: "PUO" },
+      { id: 115, text: "誰かが謝った後でも、私は恨みを持つ。", schema: "PUO" },
+      { id: 116, text: "人が自分の言い訳をしたり、自分の問題を他人のせいにしたりすると腹が立つ。", schema: "PUO" }
+    ];
+
+    // スキーマ情報
+    const schemaInfo = {
+      ED:  { name: "愛情剥奪スキーマ", desc: "十分な愛情や感情的な支えが得られないというテーマ。" },
+      AB:  { name: "見捨てられスキーマ", desc: "大事な人に見捨てられる・離れていってしまう不安。" },
+      MA:  { name: "不信・虐待スキーマ", desc: "人は自分を傷つけたり裏切ったりするという前提。" },
+      SI:  { name: "孤立スキーマ", desc: "他人と根本的に違っていて、孤立している感覚。" },
+      DS:  { name: "欠陥・恥スキーマ", desc: "自分は根本的にダメで、愛されないという感覚。" },
+      FA:  { name: "失敗スキーマ", desc: "自分は能力が低く、失敗するという前提。" },
+      DI:  { name: "無能・依存スキーマ", desc: "自力で日常をこなせない・誰かに依存してしまう不安。" },
+      VH:  { name: "すべてが怖いスキーマ", desc: "世界は危険で、災害や病気などが常に怖い感覚。" },
+      EM:  { name: "巻き込まれスキーマ", desc: "親やパートナーと心理的にくっつきすぎて境界が薄い状態。" },
+      SB:  { name: "服従スキーマ", desc: "自分より他人を優先し、拒否や対立を避ける傾向。" },
+      SS:  { name: "自己犠牲スキーマ", desc: "自分を犠牲にしてでも他人を優先し続けてしまう傾向。" },
+      FLC: { name: "自己規制の失敗スキーマ", desc: "衝動や感情をコントロールできない不安や感覚。" },
+      EC:  { name: "感情抑制スキーマ", desc: "感情表現を抑え込み、自然体でいられない状態。" },
+      US:  { name: "完璧主義スキーマ", desc: "完璧でいなければならない・常にナンバーワンであるべきという圧力。" },
+      ET:  { name: "俺様スキーマ", desc: "自分の欲求を最優先し、ルールや他人を軽視しやすい傾向。" },
+      IS:  { name: "コントロール不可能スキーマ", desc: "退屈なことや継続が苦手で、衝動的に行動してしまう傾向。" },
+      AS:  { name: "ほめられたいスキーマ", desc: "他人からの評価や注目が自尊心の中心になりやすい傾向。" },
+      NP:  { name: "ネガティブ注意スキーマ", desc: "悪い結果やリスクに強く注意が向き、悲観的になりやすい。" },
+      PUS: { name: "罰するべきスキーマ（自分）", desc: "自分のミスには厳罰が当然だと感じる傾向。" },
+      PUO: { name: "罰するべきスキーマ（他人）", desc: "他人のミスや言い訳を許せず、罰すべきだと感じる傾向。" }
+    };
+
+    const questionsContainer = document.getElementById("questionsContainer");
+    const errorMessage = document.getElementById("errorMessage");
+    const resultSection = document.getElementById("resultSection");
+    const resultTableBody = document.querySelector("#resultTable tbody");
+
+    // 質問描画
+    function renderQuestions() {
+      const frag = document.createDocumentFragment();
+
+      questions.forEach((q) => {
+        const card = document.createElement("div");
+        card.className = "question-card";
+        card.dataset.questionId = q.id;
+
+        const header = document.createElement("div");
+        header.className = "question-header";
+
+        const title = document.createElement("div");
+        title.className = "question-title";
+        title.textContent = `${q.id}. ${q.text}`;
+
+        const meta = document.createElement("div");
+        meta.className = "question-meta";
+        const info = schemaInfo[q.schema];
+        meta.textContent = info ? `${q.schema} / ${info.name}` : q.schema;
+
+        header.appendChild(title);
+        header.appendChild(meta);
+
+        const optionsRow = document.createElement("div");
+        optionsRow.className = "options-row";
+
+        const labels = [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ];
+        const labelTexts = [
+          "まったく当てはまらない(1)",
+          "ほとんど当てはまらない(2)",
+          "どちらかと言えば当てはまる(3)",
+          "まぁまぁ当てはまる(4)",
+          "ほとんど当てはまる(5)",
+          "完璧に当てはまる(6)"
+        ];
+
+        for (let i = 1; i <= 6; i++) {
+          const label = document.createElement("label");
+          label.className = "option-label";
+
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${q.id}`;
+          input.value = String(i);
+
+          const spanText = document.createElement("span");
+          spanText.className = "option-text";
+          spanText.textContent = labelTexts[i - 1];
+
+          label.appendChild(input);
+          label.appendChild(spanText);
+          optionsRow.appendChild(label);
+        }
+
+        card.appendChild(header);
+        card.appendChild(optionsRow);
+        frag.appendChild(card);
+      });
+
+      questionsContainer.appendChild(frag);
+    }
+
+    renderQuestions();
+
+    // スコア計算
+    function calculateSchemaScores() {
+      const totals = {};
+      const counts = {};
+      const missing = [];
+
+      // 初期化
+      Object.keys(schemaInfo).forEach(key => {
+        totals[key] = 0;
+        counts[key] = 0;
+      });
+
+      document
+        .querySelectorAll(".question-card.missing")
+        .forEach(el => el.classList.remove("missing"));
+
+      questions.forEach(q => {
+        const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+        if (!selected) {
+          missing.push(q.id);
+          const card = document.querySelector(`.question-card[data-question-id="${q.id}"]`);
+          if (card) card.classList.add("missing");
+          return;
+        }
+        const value = parseInt(selected.value, 10);
+        totals[q.schema] += value;
+        counts[q.schema] += 1;
+      });
+
+      if (missing.length > 0) {
+        return { ok: false, missing };
+      }
+
+      const averages = {};
+      Object.keys(schemaInfo).forEach(key => {
+        if (counts[key] > 0) {
+          averages[key] = totals[key] / counts[key];
+        } else {
+          averages[key] = 0;
+        }
+      });
+
+      return { ok: true, averages };
+    }
+
+    // 結果表示
+    function renderResults(averages) {
+      // 平均値が高い順に並べたい
+      const entries = Object.entries(averages).sort((a, b) => b[1] - a[1]);
+
+      resultTableBody.innerHTML = "";
+
+      entries.forEach(([schema, avg]) => {
+        const info = schemaInfo[schema];
+        const tr = document.createElement("tr");
+
+        const nameTd = document.createElement("td");
+        nameTd.innerHTML = `<strong>${schema}</strong> ${info ? info.name : ""}`;
+
+        const avgTd = document.createElement("td");
+        avgTd.textContent = avg.toFixed(2);
+
+        const descTd = document.createElement("td");
+        descTd.className = "schema-desc";
+        descTd.textContent = info ? info.desc : "";
+
+        const statusTd = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.classList.add("badge");
+
+        if (avg >= 4) {
+          badge.classList.add("badge-strong");
+          badge.textContent = "強め";
+        } else if (avg >= 3) {
+          badge.classList.add("badge-medium");
+          badge.textContent = "ややあり";
+        } else {
+          badge.classList.add("badge-weak");
+          badge.textContent = "弱い〜ほぼなし";
+        }
+
+        statusTd.appendChild(badge);
+
+        tr.appendChild(nameTd);
+        tr.appendChild(avgTd);
+        tr.appendChild(descTd);
+        tr.appendChild(statusTd);
+
+        resultTableBody.appendChild(tr);
+      });
+
+      resultSection.classList.add("visible");
+      resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // イベント
+    document.getElementById("submitBtn").addEventListener("click", () => {
+      const result = calculateSchemaScores();
+      if (!result.ok) {
+        errorMessage.style.display = "block";
+        errorMessage.textContent = "未回答の項目があります（赤枠の箇所）。すべての質問に回答してください。";
+        resultSection.classList.remove("visible");
+        return;
+      }
+      errorMessage.style.display = "none";
+      renderResults(result.averages);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("schemaForm").reset();
+      errorMessage.style.display = "none";
+      errorMessage.textContent = "";
+      document
+        .querySelectorAll(".question-card.missing")
+        .forEach(el => el.classList.remove("missing"));
+      resultSection.classList.remove("visible");
+      resultTableBody.innerHTML = "";
+    });
+  </script>
+</body>
+</html>
